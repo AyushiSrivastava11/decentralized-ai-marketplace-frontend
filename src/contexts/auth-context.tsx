@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Check if user is logged in on mount
@@ -37,12 +38,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        router.push('/dashboard'); // Redirect to dashboard if authenticated
       }else{
         setUser(null);   
+        // Optionally redirect to login page if not authenticated
+        if (pathname !== '/login') {
+          router.push('/login');
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       setUser(null);
+      // Optionally redirect to login page if there was an error
+      if (pathname !== '/login') {
+        router.push('/login');
+      }
     } finally {
       setIsLoading(false);
     }
