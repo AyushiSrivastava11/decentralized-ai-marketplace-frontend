@@ -1,6 +1,6 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface User {
   id: string;
@@ -23,26 +23,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    checkAuth();
+    if (user === null && pathname !== "/login") {
+      checkAuth();
+    } else {
+      setIsLoading(false); // Don't keep login page in loading state
+    }
   }, []);
 
   async function checkAuth() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/check-auth`, {
-        credentials: 'include',
+        credentials: "include",
       });
+
+console.log('Auth check response:', response);
+
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
-      }else{
-        setUser(null);   
+        console.log("Running auth check...");
+        console.log("User from API:", userData);
+        // Redirect only if not already on dashboard
+        if (pathname === "/login") {
+          router.replace("/dashboard");
+        }
+      } else {
+              console.log('Not authenticated, redirecting to login');
+        setUser(null);
+        // Optionally redirect to login page if not authenticated
+        // if (pathname !== "/login") {
+        //   router.replace(`/login?from=${pathname}`);
+        // }
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error("Auth check failed:", error);
       setUser(null);
+      // Optionally redirect to login page if there was an error
+      // if (pathname !== "/login") {
+      //   router.replace(`/login?from=${pathname}`);
+      // }
     } finally {
       setIsLoading(false);
     }
@@ -51,57 +73,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function login(email: string, password: string) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('Login failed');
+        throw new Error("Login failed");
       }
 
       const userData = await response.json();
       setUser(userData);
-      router.push('/dashboard');
+      console.log("Login successful. Redirecting to dashboard...");
+      router.replace("/dashboard");
     } catch (error) {
-      console.error('Login error:', error);
-      throw new Error('Login failed. Please check your credentials.');
+      console.error("Login error:", error);
+      throw new Error("Login failed. Please check your credentials.");
     }
   }
 
   async function signup(email: string, password: string, name: string) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name }),
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('Signup failed');
+        throw new Error("Signup failed");
       }
 
       const userData = await response.json();
       setUser(userData);
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (error) {
-      console.error('Signup error:', error);
-      throw new Error('Signup failed. Please try again.');
+      console.error("Signup error:", error);
+      throw new Error("Signup failed. Please try again.");
     }
   }
 
   async function logout() {
     try {
       await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "GET",
       });
       setUser(null);
-      router.push('/');
+      router.replace("/");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   }
 
@@ -115,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-} 
+}
