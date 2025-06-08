@@ -5,7 +5,9 @@ import type { NextRequest } from 'next/server';
 const publicPaths = ['/', '/login', '/signup'];
 
 export function middleware(request: NextRequest) {
-  const authToken = request.cookies.get('authToken');
+  const authToken = request.cookies.get('token');
+  console.log('🔐 Middleware cookie token:', authToken);
+
   const { pathname } = request.nextUrl;
 
   // Allow access to public paths

@@ -1,10 +1,27 @@
+import { cookies } from "next/headers";
+
 // Types
 export interface Agent {
   id: string;
   name: string;
   description: string;
-  imageUrl?: string;
-  createdAt: string;
+  tags: string[];
+  inputSchema: Record<string, unknown>; // or a specific interface if you know the shape
+  outputSchema: Record<string, unknown>; // or a specific interface if you know the shape
+  pricePerRun: number;
+  isPublic: boolean;
+  filePath: string;
+  createdAt: string; // ISO date string from API
+  updatedAt: string;
+  developerId: string;
+  developer: {
+    id: string;
+    email?: string;
+    name?: string;
+    // Add more if your API returns extra developer fields
+  };
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'; // assuming these enum values
+  rejectionReason?: string | null;
 }
 
 export interface AgentInput {
@@ -26,9 +43,27 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // API Functions
 export async function getAllAgents(): Promise<Agent[]> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/get-approved-workers`);
-  if (!response.ok) throw new Error('Failed to fetch agents');
-  return response.json();
+  try{
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/get-approved-workers`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      cache: 'no-store', // Ensure fresh data
+    }
+  );
+  console.log('Get all agents response:', response);
+  // if (!response.ok) throw new Error('Failed to fetch agents');
+
+  const data = await response.json();
+  return data.aiApprovedWorkers as Agent[];
+} catch (error) {
+  console.error('Error fetching agents:', error);
+  throw error; // Re-throw to handle it in the calling function
+  }
 }
 
 export async function getAgentById(id: string): Promise<Agent> {

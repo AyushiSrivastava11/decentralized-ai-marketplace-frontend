@@ -1,11 +1,22 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AgentCard } from '@/components/AgentCard';
-import { getAllAgents } from '@/services/api';
+import { Agent, getAllAgents } from '@/services/api';
+
 
 export default async function DashboardPage() {
-  const agents = await getAllAgents();
-  const featuredAgents = agents.slice(0, 3); // Show first 3 agents as featured
+  let agents: Agent[] = [];
+
+  try {
+    agents = await getAllAgents();
+    console.log('Fetched agents:', agents);
+  } catch (err) {
+    console.error('Failed to load agents on dashboard:', err);
+    // Optional fallback UI
+    return <div className="text-red-500">Failed to load agents. Please try again later.</div>;
+  }
+
+  const featuredAgents = agents?.slice(0, 3); // Show first 3 agents as featured
 
   return (
     <div className="space-y-8">
@@ -20,7 +31,7 @@ export default async function DashboardPage() {
         <div className="col-span-2">
           <h2 className="text-xl font-semibold mb-4">Featured Agents</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {featuredAgents.map((agent) => (
+            {featuredAgents?.map((agent) => (
               <AgentCard key={agent.id} agent={agent} />
             ))}
           </div>
