@@ -25,13 +25,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+
   useEffect(() => {
-    if (user === null && pathname !== "/login") {
-      checkAuth();
-    } else {
-      setIsLoading(false); // Don't keep login page in loading state
-    }
-  }, []);
+  checkAuth();
+}, []);
+
 
   async function checkAuth() {
     try {
@@ -115,17 +113,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  
+
   async function logout() {
-    try {
-      await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-        method: "GET",
-      });
-      setUser(null);
-      router.replace("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+  try {
+    await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+      method: "GET",
+      credentials: "include",
+    });
+    setUser(null);
+    router.replace("/");
+  } catch (error) {
+    console.error("Logout failed:", error);
   }
+}
+
 
   return (
     <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>

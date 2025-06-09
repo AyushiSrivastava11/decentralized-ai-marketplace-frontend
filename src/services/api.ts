@@ -42,31 +42,51 @@ export interface RunAgentOutput {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // API Functions
-export async function getAllAgents(): Promise<Agent[]> {
-  try{
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
-  // console.log('Fetching approved agents from:', `${API_BASE_URL}/api/v1/aiworker/get-approved-workers`);
-  const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/get-approved-workers`,
-    {method: 'GET',
-      headers: {
-        'Cookie': `token=${token}`,
-        // 'Authorization': `bearer ${token}`
-      },
-      cache: 'no-store', // Ensure fresh data
-    }
-  );
-  // console.log('Response status:', response.status);
-  // console.log('Get all agents response:', response);
-  // if (!response.ok) throw new Error('Failed to fetch agents');
+// export async function getAllAgents(): Promise<Agent[]> {
+//   try{
+//   const cookieStore = await cookies();
+//   const token = cookieStore.get('token')?.value;
+//   // console.log('Fetching approved agents from:', `${API_BASE_URL}/api/v1/aiworker/get-approved-workers`);
+//   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/get-approved-workers`,
+//     {method: 'GET',
+//       headers: {
+//         'Cookie': `token=${token}`,
+//         // 'Authorization': `bearer ${token}`
+//       },
+//       cache: 'no-store', // Ensure fresh data
+//     }
+//   );
+//   // console.log('Response status:', response.status);
+//   // console.log('Get all agents response:', response);
+//   // if (!response.ok) throw new Error('Failed to fetch agents');
 
-  const data = await response.json();
-  return data.aiApprovedWorkers as Agent[];
-} catch (error) {
-  console.error('Error fetching agents:', error);
-  throw error; // Re-throw to handle it in the calling function
+//   const data = await response.json();
+//   return data.aiApprovedWorkers as Agent[];
+// } catch (error) {
+//   console.error('Error fetching agents:', error);
+//   throw error; // Re-throw to handle it in the calling function
+//   }
+// }
+
+export async function getAllAgents(): Promise<Agent[]> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/aiworker/get-approved-workers`,
+      {
+        method: "GET",
+        credentials: "include", // <-- key point here
+        cache: "no-store", // Ensure fresh data
+      }
+    );
+
+    const data = await response.json();
+    return data.aiApprovedWorkers as Agent[];
+  } catch (error) {
+    console.error("Error fetching agents:", error);
+    throw error; // Re-throw to handle it in the calling function
   }
 }
+
 
 export async function getAgentById(id: string): Promise<Agent> {
   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/get-aiworker/${id}`);

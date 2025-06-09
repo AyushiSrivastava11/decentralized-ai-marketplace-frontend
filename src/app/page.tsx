@@ -1,12 +1,29 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+"use client";
+
+import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Home() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      // If user is logged in, redirect to dashboard
+      router.replace("/dashboard");
+    }
+  }, [user, isLoading, router]);
+
+  // Optionally, show nothing while checking
+  if (isLoading) return null;
+
+  // If user is not logged in → show landing page
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
-      <h1 className="text-5xl font-bold mb-6">
-        Welcome to AIPLAXE
-      </h1>
+      <h1 className="text-5xl font-bold mb-6">Welcome to AIPLAXE</h1>
       <p className="text-xl text-gray-600 max-w-2xl mb-8">
         Your marketplace for powerful AI agents. From data analysis to content generation,
         find the perfect AI worker for your needs.
