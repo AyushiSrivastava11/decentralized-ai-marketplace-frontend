@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import {toast} from "sonner";
 
 interface User {
   id: string;
@@ -83,6 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const userData = await response.json();
       setUser(userData);
+      toast.success("Login successful! Redirecting to dashboard...");
+      await new Promise((resolve) => setTimeout(resolve, 300)); 
       console.log("Login successful. Redirecting to dashboard...");
       router.replace("/dashboard");
     } catch (error) {
@@ -106,6 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const userData = await response.json();
       setUser(userData);
+       toast.success("Account created! Redirecting to dashboard...");
+      await new Promise(resolve => setTimeout(resolve, 300));
       router.push("/dashboard");
     } catch (error) {
       console.error("Signup error:", error);
@@ -122,6 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       credentials: "include",
     });
     setUser(null);
+    toast.success("Logged out successfully.");
+      await new Promise(resolve => setTimeout(resolve, 300));
     router.replace("/");
   } catch (error) {
     console.error("Logout failed:", error);
