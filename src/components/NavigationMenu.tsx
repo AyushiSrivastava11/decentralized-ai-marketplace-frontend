@@ -2,10 +2,16 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
+import { useEffect, useState } from 'react';
 
 export function NavigationMenu() {
-  const { user, logout } = useAuth();
-
+  const { user, logout, isLoading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted || isLoading) return null; // prevent premature render
+  
   return (
     <nav className="border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

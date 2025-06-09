@@ -46,16 +46,18 @@ export async function getAllAgents(): Promise<Agent[]> {
   try{
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-
+  // console.log('Fetching approved agents from:', `${API_BASE_URL}/api/v1/aiworker/get-approved-workers`);
   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/get-approved-workers`,
-    {
+    {method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Cookie': `token=${token}`,
+        // 'Authorization': `bearer ${token}`
       },
       cache: 'no-store', // Ensure fresh data
     }
   );
-  console.log('Get all agents response:', response);
+  // console.log('Response status:', response.status);
+  // console.log('Get all agents response:', response);
   // if (!response.ok) throw new Error('Failed to fetch agents');
 
   const data = await response.json();
