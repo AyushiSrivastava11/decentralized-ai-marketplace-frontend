@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include",
       });
 
-console.log('Auth check response:', response);
+// console.log('Auth check response:', response);
 
       if (response.ok) {
         const userData = await response.json();
