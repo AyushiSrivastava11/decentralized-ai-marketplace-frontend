@@ -80,6 +80,7 @@ export async function getAllAgents(): Promise<Agent[]> {
     );
 
     const data = await response.json();
+    console.log("This is the data : ",data);
     return data.aiApprovedWorkers as Agent[];
   } catch (error) {
     console.error("Error fetching agents:", error);
