@@ -1,12 +1,42 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {toast} from "sonner";
+import { toast } from "sonner";
+
+interface Purchase {
+  // Add only fields you will use on frontend
+  id: string;
+  // e.g., workerId: string; createdAt: string; etc.
+}
+
+interface AIWorker {
+  id: string;
+  name: string;
+  // etc.
+}
+
+interface Job {
+  id: string;
+  // etc.
+}
+
+interface Review {
+  id: string;
+  // etc.
+}
 
 interface User {
   id: string;
   email: string;
   name: string;
+  isDeveloper: boolean;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+  // purchases: Purchase[];
+  uploadedWorkers: AIWorker[];
+  jobs: Job[];
+  reviews: Review[];
 }
 
 interface AuthContextType {
@@ -14,6 +44,12 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  updateProfile: (updatedData: {
+    name: string;
+    isDeveloper: boolean;
+  }) => Promise<void>;
+
   isLoading: boolean;
 }
 
@@ -26,11 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-
   useEffect(() => {
-  checkAuth();
-}, []);
-
+    checkAuth();
+  }, []);
 
   async function checkAuth() {
     try {
@@ -38,32 +72,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include",
       });
 
-// console.log('Auth check response:', response);
-
       if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+        const data = await response.json();
+        setUser(data.user); // <--- FIXED HERE
         console.log("Running auth check...");
-        console.log("User from API:", userData);
-        // Redirect only if not already on dashboard
+        console.log("User from API:", data.user);
         if (pathname === "/login") {
           router.replace("/dashboard");
         }
       } else {
-              console.log('Not authenticated, redirecting to login');
+        console.log("Not authenticated, redirecting to login");
         setUser(null);
-        // Optionally redirect to login page if not authenticated
-        // if (pathname !== "/login") {
-        //   router.replace(`/login?from=${pathname}`);
-        // }
       }
     } catch (error) {
       console.error("Auth check failed:", error);
       setUser(null);
-      // Optionally redirect to login page if there was an error
-      // if (pathname !== "/login") {
-      //   router.replace(`/login?from=${pathname}`);
-      // }
     } finally {
       setIsLoading(false);
     }
@@ -83,9 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = await response.json();
-      setUser(userData);
+      setUser(userData); // login API returns user object directly (no wrapper)
       toast.success("Login successful! Redirecting to dashboard...");
-      await new Promise((resolve) => setTimeout(resolve, 300)); 
+      await new Promise((resolve) => setTimeout(resolve, 300));
       console.log("Login successful. Redirecting to dashboard...");
       router.replace("/dashboard");
     } catch (error) {
@@ -108,9 +131,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = await response.json();
-      setUser(userData);
-       toast.success("Account created! Redirecting to dashboard...");
-      await new Promise(resolve => setTimeout(resolve, 300));
+      setUser(userData); // register API returns user object directly (no wrapper)
+      toast.success("Account created! Redirecting to dashboard...");
+      await new Promise((resolve) => setTimeout(resolve, 300));
       router.push("/dashboard");
     } catch (error) {
       console.error("Signup error:", error);
@@ -118,26 +141,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  
-
   async function logout() {
-  try {
-    await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-      method: "GET",
-      credentials: "include",
-    });
-    setUser(null);
-    toast.success("Logged out successfully.");
-      await new Promise(resolve => setTimeout(resolve, 300));
-    router.replace("/");
-  } catch (error) {
-    console.error("Logout failed:", error);
+    try {
+      await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+        method: "GET",
+        credentials: "include",
+      });
+      setUser(null);
+      toast.success("Logged out successfully.");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   }
-}
 
+  async function updateProfile(updatedData: {
+    name: string;
+    isDeveloper: boolean;
+  }) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(updatedData),
+      });
+      console.log(response);
+      console.log("Updating profile with data:", updatedData);
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      const updatedUser = await response.json();
+      setUser(updatedUser.user); // update user in context to reflect changes!
+
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      throw new Error("Profile update failed. Please try again.");
+    }
+  }
+
+  async function deleteAccount() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/delete`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      console.log("Deleting account...");
+      if (!response.ok) {
+        throw new Error("Failed to delete account");
+      }
+      const result = await response.json();
+      console.log("Account deleted successfully:", result);
+      setUser(null); // Clear user from context
+      toast.success("Account deleted successfully. We're sad to see you go!");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      router.replace("/"); // Redirect to home page after deletion
+    } catch (error) {
+      console.error("Delete account failed:", error);
+      throw new Error("Delete account failed. Please try again.");
+    }
+  }
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        signup,
+        logout,
+        updateProfile,
+        deleteAccount,
+        isLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
