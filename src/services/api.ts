@@ -28,7 +28,11 @@ export interface Agent {
 export interface AgentInput {
   name: string;
   description: string;
-  files: File[];
+  tags: string;
+  inputSchema: string;
+  outputSchema: string;
+  pricePerRun: number;
+  file: File;
 }
 
 export interface RunAgentInput {
@@ -119,14 +123,22 @@ export async function uploadAgent(data: AgentInput): Promise<Agent> {
   const formData = new FormData();
   formData.append('name', data.name);
   formData.append('description', data.description);
- formData.append('file', data.files[0]);
+ formData.append('tags', data.tags);
+  formData.append('inputSchema', data.inputSchema);
+  formData.append('outputSchema', data.outputSchema);
+  formData.append('pricePerRun', data.pricePerRun.toString());
+  formData.append('file', data.file);
 
   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/upload`, {
     method: 'POST',
     body: formData,
     credentials: 'include', 
   });
-  if (!response.ok) throw new Error('Failed to upload agent');
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to upload agent');
+  }
   return response.json();
 } 
 
