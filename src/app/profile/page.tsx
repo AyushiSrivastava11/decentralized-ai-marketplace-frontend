@@ -13,8 +13,8 @@ export default function ProfilePage() {
   const menuItems = [
     { key: "get", label: "Get My Profile" },
     { key: "update", label: "Update My Profile" },
-    { key: "delete", label: "Delete My Profile" },
     ...(user?.role === "ADMIN" ? [{ key: "admin", label: "Admin" }] : []),
+    { key: "delete", label: "Delete My Profile" },
   ];
 
   const renderProfileDetails = () => {
@@ -72,18 +72,20 @@ export default function ProfilePage() {
             <UpdateProfileForm /> {/* Use the actual form here */}
           </div>
         );
-      case "delete":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold mb-4 text-red-600">Delete Profile</h2>
-            <DeleteAccountCard/>
-          </div>
-        );
+      
       case "admin":
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold mb-4 text-purple-600">Admin Panel</h2>
             <p>Admin functionality goes here.</p>
+          </div>
+        );
+
+        case "delete":
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold mb-4 text-red-600">Delete Profile</h2>
+            <DeleteAccountCard/>
           </div>
         );
       default:

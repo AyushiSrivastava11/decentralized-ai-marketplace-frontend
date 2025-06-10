@@ -6,33 +6,52 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { uploadAgent } from '@/services/api';
+import { toast } from 'sonner';
 
 export function UploadForm() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading,setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (!name || !description || !file) {
+      toast.error('Please fill in all fields and select a file');
+      return;
+    }
+    setIsUploading(true);
     setError(null);
 
-    try {
-      await uploadAgent({ name, description, files });
-      router.push('/agents');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setIsLoading(false);
+   try {
+      const agent = await uploadAgent({
+        name,
+        description,
+        files: [file],
+      });
+      toast.success(`Agent "${agent.name}" uploaded successfully!`);
+      // Optionally reset form
+      setName('');
+      setDescription('');
+      setFile(null);
+    } catch (error: any) {
+      console.error('Error uploading agent:', error);
+      toast.error(error.message || 'Failed to upload agent');
+    } finally {
+      setIsUploading(false);
     }
   };
 
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles(Array.from(e.target.files));
-    }
+    // if (e.target.files) {
+    //   setFiles(Array.from(e.target.files));
+    // }
+    const selectedFile = e.target.files?.[0];
+    setFile(selectedFile ?? null);
   };
 
   return (
@@ -70,19 +89,20 @@ export function UploadForm() {
 
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="files">
-              Source Files
+              Upload .zip file
             </label>
             <Input
               id="files"
               type="file"
+              accept=".zip"
               onChange={handleFileChange}
-              multiple
+              
               required
               disabled={isLoading}
-              accept=".py,.js,.ts,.dockerfile,Dockerfile"
+              // accept=".py,.js,.ts,.dockerfile,Dockerfile"
             />
             <p className="mt-1 text-sm text-gray-500">
-              Upload your agent source files and Dockerfile
+              Upload your agent source files in .zip
             </p>
           </div>
 
@@ -93,7 +113,7 @@ export function UploadForm() {
 
         <CardFooter>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Uploading...' : 'Upload Agent'}
+            {isUploading ? 'Uploading...' : 'Upload Agent'}
           </Button>
         </CardFooter>
       </Card>
