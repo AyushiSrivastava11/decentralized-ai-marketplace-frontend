@@ -1,8 +1,26 @@
-import { AgentCard } from '@/components/AgentCard';
-import { getAllAgents } from '@/services/api';
+"use client";
+import { AgentCard } from "@/components/AgentCard";
+import { getAllAgents, Agent } from "@/services/api";
+import { useEffect, useState } from "react";
 
-export default async function AgentsPage() {
-  const agents = await getAllAgents();
+export default function AgentsPage() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchAgents() {
+      try {
+        const fetchedAgents = await getAllAgents();
+        setAgents(fetchedAgents);
+        console.log("THESE ARE THE AGENTS :", fetchedAgents);
+      } catch (err) {
+        console.error("Failed to load agents on dashboard:", err);
+        setError("Failed to load agents. Please try again later.");
+      }
+    }
+
+    fetchAgents();
+  }, []);
 
   return (
     <div>
@@ -24,6 +42,10 @@ export default async function AgentsPage() {
           No agents available yet. Be the first to upload one!
         </p>
       )}
+
+      {error && (
+        <p className="text-center text-red-500 mt-4">{error}</p>
+      )}
     </div>
   );
-} 
+}
