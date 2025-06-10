@@ -1,3 +1,4 @@
+
 import { cookies } from "next/headers";
 
 // Types
@@ -90,10 +91,19 @@ export async function getAllAgents(): Promise<Agent[]> {
 
 
 export async function getAgentById(id: string): Promise<Agent> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/get-aiworker/${id}`);
+  const response = await fetch(`${API_BASE_URL}/api/v1/user/get-aiworker/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
   if (!response.ok) throw new Error('Failed to fetch agent');
-  return response.json();
+
+  const data = await response.json();
+
+  return data.aiWorker as Agent;
 }
+
 
 export async function runAgent(id: string, input: RunAgentInput): Promise<RunAgentOutput> {
   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/run/${id}`, {
@@ -109,13 +119,12 @@ export async function uploadAgent(data: AgentInput): Promise<Agent> {
   const formData = new FormData();
   formData.append('name', data.name);
   formData.append('description', data.description);
-  data.files.forEach(file => {
-    formData.append('files', file);
-  });
+ formData.append('file', data.files[0]);
 
   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/upload`, {
     method: 'POST',
     body: formData,
+    credentials: 'include', 
   });
   if (!response.ok) throw new Error('Failed to upload agent');
   return response.json();

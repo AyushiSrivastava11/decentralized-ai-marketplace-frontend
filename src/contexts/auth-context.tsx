@@ -25,7 +25,7 @@ interface Review {
   // etc.
 }
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
