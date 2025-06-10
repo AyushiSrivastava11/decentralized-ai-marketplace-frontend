@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { AgentCard } from "@/components/AgentCard";
 import { Agent, getAllAgents } from "@/services/api";
 import { AuthGuard } from "@/components/AuthGuard";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function DashboardPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchAgents() {
@@ -31,14 +33,14 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button asChild>
-            <Link href="/upload">Upload New Agent</Link>
-          </Button>
+          {user?.isDeveloper && (
+            <Button asChild>
+              <Link href="/upload">Upload New Agent</Link>
+            </Button>
+          )}
         </div>
 
-        {error && (
-          <div className="text-red-500 mb-4">{error}</div>
-        )}
+        {error && <div className="text-red-500 mb-4">{error}</div>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="col-span-2">
@@ -53,15 +55,23 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
             <div className="space-y-4">
-              <Button variant="outline" className="w-full justify-start" asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                asChild
+              >
                 <Link href="/agents">
                   <span className="flex items-center">Browse All Agents</span>
                 </Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href="/upload">
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                asChild
+              >
+                {user?.isDeveloper && (<Link href="/upload">
                   <span className="flex items-center">Upload New Agent</span>
-                </Link>
+                </Link>)}
               </Button>
             </div>
           </div>
