@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { Agent } from "@/services/api";
 import React from "react"; // <-- needed for React.use()
 import { Button } from "@/components/ui/button";
+import AgentPaymentButton from "@/components/AgentPaymentButton";
+import { User } from "@/contexts/auth-context";
 
 interface AgentDetailPageProps {
   params: Promise<{ id: string }>; // this is now a Promise
@@ -19,7 +21,7 @@ async function checkUserOwnsAgent(agentId: string): Promise<boolean> {
 
 export default function AgentDetailPage({ params }: AgentDetailPageProps) {
   const { id } = React.use(params); // official way → unwrapping the Promise param
-
+  const [user, setUser] = useState<User | null>(null); // Replace 'any' with your user type
   const [agent, setAgent] = useState<Agent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ownsAgent, setOwnsAgent] = useState<boolean>(false);
@@ -76,7 +78,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
         <p className="text-gray-600 mt-2">{agent.description}</p>
         <p className="text-sm text-gray-500 mt-1">
           Price per run:{" "}
-          <span className="font-medium">${agent.pricePerRun}</span>
+          <span className="font-medium">₹{agent.pricePerRun}</span>
         </p>
       </div>
 
@@ -115,11 +117,11 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
           </div>
 
           <p className="text-center text-gray-700 font-medium mt-2">
-            Total price: ${agent.pricePerRun * runsToBuy}
+            Total price: ₹{agent.pricePerRun * runsToBuy}
           </p>
 
          
-          <Button className="w-full text-center" asChild>
+          {/* <Button className="w-full text-center" asChild>
             <span
               onClick={handleBuyRuns}
               role="button"
@@ -129,7 +131,10 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
             >
               {isBuying ? "Processing..." : "Buy Runs & Run Agent"}
             </span>
-          </Button>
+          </Button> */}
+          <div className="flex justify-center mt-4">
+            <AgentPaymentButton aiWorkerId={agent.id} pricePerRun={agent.pricePerRun} user={user} cycles={runsToBuy} isBuying={isBuying} />
+          </div>
         </div>
       )}
     </div>
