@@ -26,7 +26,7 @@ export default function DashboardPage() {
     fetchAgents();
   }, []);
 
-  const featuredAgents = agents.slice(0, 3);
+  const featuredAgents = agents?.slice(0, 3);
 
   return (
     <AuthGuard>

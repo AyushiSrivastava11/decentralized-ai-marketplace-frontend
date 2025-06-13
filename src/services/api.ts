@@ -73,6 +73,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 //   }
 // }
 
+
+
 export async function getAllAgents(): Promise<Agent[]> {
   try {
     const response = await fetch(
