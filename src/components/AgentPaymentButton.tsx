@@ -1,73 +1,118 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { loadRazorpayScript } from "@/utils/loadRazorpay";
+import { User } from "@/contexts/auth-context";
 
-export default function AgentPaymentButton({ aiWorkerId, pricePerRun, user, cycles, isBuying }: { aiWorkerId: string; pricePerRun: number; user: any; cycles: number; isBuying: boolean; }) {
+export default function AgentPaymentButton({
+  aiWorkerId,
+  pricePerRun,
+  user,
+  cycles,
+  isBuying,
+}: {
+  aiWorkerId: string;
+  pricePerRun: number;
+  user: User;
+  cycles: number;
+  isBuying: boolean;
+}) {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handlePayment = async () => {
-    const loaded = await loadRazorpayScript();
-    if (!loaded) return alert("Razorpay SDK failed to load");
+    setErrorMessage(null); // reset error before starting
 
-    // const cycles = prompt("Enter number of runs:");
-    // if (!cycles) return;
+    try {
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        setErrorMessage("Failed to load Razorpay SDK. Please try again.");
+        return;
+      }
 
-    const amount = cycles * pricePerRun;
+      const amount = cycles * pricePerRun;
 
-    // 1. Create order from backend
-    const orderRes = await fetch("/api/payment/order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ aiWorkerId, cycles }),
-    });
-    const order = await orderRes.json();
+      // Step 1: Create order
+      const orderRes = await fetch("/api/payment/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ aiWorkerId, cycles }),
+      });
 
-    if (!order.id) return alert("Order creation failed");
+      if (!orderRes.ok) {
+        throw new Error("Failed to create payment order");
+      }
 
-    // 2. Open Razorpay modal
-    const razorpay = new (window as any).Razorpay({
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-      amount: order.amount,
-      currency: "INR",
-      name: "AIPLAXE",
-      description: "Rent AI Agent",
-      order_id: order.id,
-      handler: async function (response: any) {
-        // 3. Verify payment
-        const verifyRes = await fetch("/api/payment/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-            userId: user?.id,
-            aiWorkerId,
-            cycles,
-          }),
-        });
+      const orderBody = await orderRes.json();
+      console.log("Order response:", orderBody);
+      if (!orderBody.order?.id) {
+        throw new Error("Invalid order response from server");
+      }
 
-        const verifyData = await verifyRes.json();
-        if (verifyData.success) {
-          alert("Payment successful! Invoice will be downloaded.");
-          // Optional: download invoice from `verifyData.invoiceUrl`
-          window.open(verifyData.invoiceUrl, "_blank");
-        } else {
-          alert("Payment failed!");
-        }
-      },
-      prefill: {
-        name: user?.name,
-        email: user?.email,
-      },
-      theme: {
-        color: "#6366F1",
-      },
-    });
+      // Step 2: Open Razorpay modal
+      const razorpay = new (window as any).Razorpay({
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderBody.order.amount,
+        currency: "INR",
+        name: "AIPLAXE",
+        description: "Rent AI Agent",
+        order_id: orderBody.order.id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                userId: user?.id,
+                aiWorkerId,
+                cycles,
+              }),
+            });
 
-    razorpay.open();
+            if (!verifyRes.ok) {
+              throw new Error("Payment verification request failed");
+            }
+
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              window.open(verifyData.invoice, "_blank");
+            } else {
+              setErrorMessage("Payment verification failed. Please contact support.");
+            }
+          } catch (error) {
+            console.error("Verification error:", error);
+            setErrorMessage("An error occurred during payment verification.");
+          }
+        },
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+        theme: {
+          color: "#6366F1",
+        },
+      });
+
+      razorpay.open();
+    } catch (error: any) {
+      console.error("Payment Error:", error);
+      setErrorMessage(error?.message || "Something went wrong during payment.");
+    }
   };
 
-  return <Button className="text-center" onClick={handlePayment}>{isBuying ? "Processing..." : "Buy Runs & Run Agent"}</Button>;
+  return (
+    <div className="flex flex-col justify-center space-y-2">
+      <Button className="text-center" onClick={handlePayment}>
+        {isBuying ? "Processing..." : "Buy Runs & Run Agent"}
+      </Button>
+      {errorMessage && (
+        <p className="text-sm text-red-500">{errorMessage}</p>
+      )}
+    </div>
+  );
 }

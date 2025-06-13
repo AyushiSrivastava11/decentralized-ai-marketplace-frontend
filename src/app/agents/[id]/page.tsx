@@ -2,12 +2,12 @@
 
 import { AgentForm } from "@/components/AgentForm";
 import { getAgentById } from "@/services/api";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { Agent } from "@/services/api";
 import React from "react"; // <-- needed for React.use()
 import { Button } from "@/components/ui/button";
 import AgentPaymentButton from "@/components/AgentPaymentButton";
-import { User } from "@/contexts/auth-context";
+import { useAuth, User } from "@/contexts/auth-context";
 
 interface AgentDetailPageProps {
   params: Promise<{ id: string }>; // this is now a Promise
@@ -21,12 +21,13 @@ async function checkUserOwnsAgent(agentId: string): Promise<boolean> {
 
 export default function AgentDetailPage({ params }: AgentDetailPageProps) {
   const { id } = React.use(params); // official way → unwrapping the Promise param
-  const [user, setUser] = useState<User | null>(null); // Replace 'any' with your user type
   const [agent, setAgent] = useState<Agent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ownsAgent, setOwnsAgent] = useState<boolean>(false);
   const [runsToBuy, setRunsToBuy] = useState<number>(1);
   const [isBuying, setIsBuying] = useState<boolean>(false);
+  const {user} = useAuth();
+
   console.log(agent)
 
   useEffect(() => {
@@ -133,7 +134,9 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
             </span>
           </Button> */}
           <div className="flex justify-center mt-4">
-            <AgentPaymentButton aiWorkerId={agent.id} pricePerRun={agent.pricePerRun} user={user} cycles={runsToBuy} isBuying={isBuying} />
+            {user && (
+              <AgentPaymentButton aiWorkerId={agent.id} pricePerRun={agent.pricePerRun} user={user} cycles={runsToBuy} isBuying={isBuying} />
+            )}
           </div>
         </div>
       )}
