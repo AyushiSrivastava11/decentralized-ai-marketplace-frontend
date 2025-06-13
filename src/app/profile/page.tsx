@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { UpdateProfileForm } from "@/components/UpdateProfileForm";
 import { DeleteAccountCard } from "@/components/DeleteCard";
+
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<"get" | "update" | "delete" | "admin">("get");
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"get" | "update" | "delete">("get");
 
   const menuItems = [
     { key: "get", label: "Get My Profile" },
@@ -17,41 +20,28 @@ export default function ProfilePage() {
     { key: "delete", label: "Delete My Profile" },
   ];
 
+  const handleTabClick = (key: string) => {
+    if (key === "admin") {
+      router.push("/profile/admin"); // ✅ simple redirect
+    } else {
+      setActiveTab(key as "get" | "update" | "delete");
+    }
+  };
+
   const renderProfileDetails = () => {
     if (!user) return null;
 
     return (
       <div className="space-y-2">
-        <div>
-          <span className="font-semibold">Name:</span> {user.name}
-        </div>
-        <div>
-          <span className="font-semibold">Email:</span> {user.email}
-        </div>
-        <div>
-          <span className="font-semibold">Role:</span> {user.role}
-        </div>
-        <div>
-          <span className="font-semibold">Developer:</span> {user.isDeveloper ? "Yes" : "No"}
-        </div>
-        <div>
-          <span className="font-semibold">Member since:</span>{" "}
-          {new Date(user.createdAt).toLocaleDateString()}
-        </div>
-        <div>
-          <span className="font-semibold">Last updated:</span>{" "}
-          {new Date(user.updatedAt).toLocaleDateString()}
-        </div>
-        <div>
-          <span className="font-semibold">Uploaded Workers:</span>{" "}
-          {user.uploadedWorkers?.length || "None"}
-        </div>
-        <div>
-          <span className="font-semibold">Jobs:</span> {user.jobs?.length || "None"}
-        </div>
-        <div>
-          <span className="font-semibold">Reviews:</span> {user.reviews?.length || "None"}
-        </div>
+        <div><span className="font-semibold">Name:</span> {user.name}</div>
+        <div><span className="font-semibold">Email:</span> {user.email}</div>
+        <div><span className="font-semibold">Role:</span> {user.role}</div>
+        <div><span className="font-semibold">Developer:</span> {user.isDeveloper ? "Yes" : "No"}</div>
+        <div><span className="font-semibold">Member since:</span> {new Date(user.createdAt).toLocaleDateString()}</div>
+        <div><span className="font-semibold">Last updated:</span> {new Date(user.updatedAt).toLocaleDateString()}</div>
+        <div><span className="font-semibold">Uploaded Workers:</span> {user.uploadedWorkers?.length || "None"}</div>
+        <div><span className="font-semibold">Jobs:</span> {user.jobs?.length || "None"}</div>
+        <div><span className="font-semibold">Reviews:</span> {user.reviews?.length || "None"}</div>
       </div>
     );
   };
@@ -69,23 +59,14 @@ export default function ProfilePage() {
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold mb-4">Update Profile</h2>
-            <UpdateProfileForm /> {/* Use the actual form here */}
+            <UpdateProfileForm />
           </div>
         );
-      
-      case "admin":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold mb-4 text-purple-600">Admin Panel</h2>
-            <p>Admin functionality goes here.</p>
-          </div>
-        );
-
-        case "delete":
+      case "delete":
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold mb-4 text-red-600">Delete Profile</h2>
-            <DeleteAccountCard/>
+            <DeleteAccountCard />
           </div>
         );
       default:
@@ -105,7 +86,7 @@ export default function ProfilePage() {
                 key={item.key}
                 variant={activeTab === item.key ? "default" : "outline"}
                 className="w-full justify-start"
-                onClick={() => setActiveTab(item.key as any)}
+                onClick={() => handleTabClick(item.key)}
               >
                 {item.label}
               </Button>

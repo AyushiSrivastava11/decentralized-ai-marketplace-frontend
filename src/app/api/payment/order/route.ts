@@ -14,9 +14,11 @@ export async function POST(req: NextRequest) {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
-      "Cookie": `token=${token}` // Include token in headers
+      credentials: 'include',
+    cache: 'no-store',
+      // "Cookie": `token=${token}` // Include token in headers
      },
-    credentials: "include",
+    // credentials: "include",
     body: JSON.stringify({ aiWorkerId, cycles }),
   });
 
