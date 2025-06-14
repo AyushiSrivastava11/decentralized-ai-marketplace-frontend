@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
@@ -6,22 +7,25 @@ export async function POST(req: NextRequest) {
   const { aiWorkerId, cycles } = body;
 
   const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const cookieStore =cookies() as any; // ✅ Don't need to await cookies()
 
-  const cookieStore = await cookies(); // 🔥 get browser cookies manually
   const token = cookieStore.get("token")?.value;
+
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const res = await fetch(`${API_URL}/api/v1/payment/create-order`, {
     method: "POST",
-    headers: { 
+    headers: {
       "Content-Type": "application/json",
-      credentials: 'include',
-    cache: 'no-store',
-      // "Cookie": `token=${token}` // Include token in headers
-     },
-    // credentials: "include",
+      "Cookie": `token=${token}`, 
+    },
+    cache: "no-store",
     body: JSON.stringify({ aiWorkerId, cycles }),
   });
 
   const data = await res.json();
+
   return NextResponse.json(data);
 }
