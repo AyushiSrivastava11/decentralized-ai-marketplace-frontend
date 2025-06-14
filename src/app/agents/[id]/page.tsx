@@ -14,9 +14,18 @@ interface AgentDetailPageProps {
 }
 
 // Example: you'll replace this with a real API later
-async function checkUserOwnsAgent(agentId: string): Promise<boolean> {
-  // Simulate API call → right now we fake it
-  return false;
+async function checkUserOwnsAgent(agentId: string, userId: string): Promise<boolean> {
+
+  if (!userId) return false;
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/user/${userId}/purchased-workers/${agentId}`,
+    { credentials: "include" }
+  );
+
+  const data = await res.json();
+  console.log("Ownership check response:", data);
+  return data.owns;
 }
 
 export default function AgentDetailPage({ params }: AgentDetailPageProps) {
@@ -26,7 +35,8 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
   const [ownsAgent, setOwnsAgent] = useState<boolean>(false);
   const [runsToBuy, setRunsToBuy] = useState<number>(1);
   const [isBuying, setIsBuying] = useState<boolean>(false);
-  const {user} = useAuth();
+  const { user } = useAuth();
+  const userId = user?.id;
 
   console.log(agent)
 
@@ -36,8 +46,10 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
         const fetchedAgent = await getAgentById(id);
         setAgent(fetchedAgent);
 
-        const ownership = await checkUserOwnsAgent(id);
+        if (userId) {
+        const ownership = await checkUserOwnsAgent(id, userId);
         setOwnsAgent(ownership);
+      }
       } catch (err) {
         console.error("Failed to load agent:", err);
         setError("Failed to load agent. Please try again later.");
@@ -135,7 +147,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
           </Button> */}
           <div className="flex justify-center mt-4">
             {user && (
-              <AgentPaymentButton aiWorkerId={agent.id} pricePerRun={agent.pricePerRun} user={user} cycles={runsToBuy} isBuying={isBuying} />
+              <AgentPaymentButton aiWorkerId={agent.id} pricePerRun={agent.pricePerRun} user={user} cycles={runsToBuy} isBuying={isBuying} onPaymentSuccess={() => setOwnsAgent(true)} />
             )}
           </div>
         </div>

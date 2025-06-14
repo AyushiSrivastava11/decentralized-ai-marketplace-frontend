@@ -11,12 +11,14 @@ export default function AgentPaymentButton({
   user,
   cycles,
   isBuying,
+  onPaymentSuccess
 }: {
   aiWorkerId: string;
   pricePerRun: number;
   user: User;
   cycles: number;
   isBuying: boolean;
+  onPaymentSuccess?: () => void;
 }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -79,8 +81,13 @@ export default function AgentPaymentButton({
             }
 
             const verifyData = await verifyRes.json();
+            const invoiceLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/${verifyData.invoice}`;
+
             if (verifyData.success) {
-              window.open(verifyData.invoice, "_blank");
+                if (onPaymentSuccess){ 
+                    onPaymentSuccess();
+                }
+              window.open(invoiceLink, "_blank");
             } else {
               setErrorMessage("Payment verification failed. Please contact support.");
             }
