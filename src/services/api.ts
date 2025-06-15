@@ -35,9 +35,9 @@ export interface AgentInput {
   file: File;
 }
 
-export interface RunAgentInput {
-  input: string;
-}
+// export interface RunAgentInput {
+//   input: string;
+// }
 
 export interface RunAgentOutput {
   output: string;
@@ -87,7 +87,6 @@ export async function getAllAgents(): Promise<Agent[]> {
     );
 
     const data = await response.json();
-    console.log("This is the data : ",data);
     return data.aiApprovedWorkers as Agent[];
   } catch (error) {
     console.error("Error fetching agents:", error);
@@ -111,16 +110,36 @@ export async function getAgentById(id: string): Promise<Agent> {
 }
 
 
-export async function runAgent(id: string, input: RunAgentInput): Promise<RunAgentOutput> {
+// export async function runAgent(id: string, input: {text:string}, userId:string): Promise<RunAgentOutput> {
+//   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/run/${id}`, {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({input,userId,aiWorkerId : id}),
+//     credentials: 'include', // Include cookies for session management
+//   });
+//   if (!response.ok) throw new Error('Failed to run agent');
+//   return response.json();
+// }
+export async function runAgent(
+  id: string,
+  input: Record<string, any>,
+  userId: string
+): Promise<RunAgentOutput> {
   const response = await fetch(`${API_BASE_URL}/api/v1/aiworker/run/${id}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-    credentials: 'include', // Include cookies for session management
+    body: JSON.stringify({
+      input,
+      userId,
+      aiWorkerId: id,
+    }),
+    credentials: 'include',
   });
+
   if (!response.ok) throw new Error('Failed to run agent');
   return response.json();
 }
+
 
 export async function uploadAgent(data: AgentInput): Promise<Agent> {
   const formData = new FormData();
