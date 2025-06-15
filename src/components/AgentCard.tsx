@@ -8,7 +8,6 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent }: AgentCardProps) {
-  console.log(agent)
   return (
     <Link href={`/agents/${agent.id}`}>
       <Card className="h-full hover:shadow-lg transition-shadow">

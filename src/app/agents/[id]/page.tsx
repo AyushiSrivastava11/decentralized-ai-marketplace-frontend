@@ -4,18 +4,16 @@ import { AgentForm } from "@/components/AgentForm";
 import { getAgentById } from "@/services/api";
 import { use, useEffect, useState } from "react";
 import { Agent } from "@/services/api";
-import React from "react"; // <-- needed for React.use()
+import React from "react";
 import { Button } from "@/components/ui/button";
 import AgentPaymentButton from "@/components/AgentPaymentButton";
 import { useAuth, User } from "@/contexts/auth-context";
 
 interface AgentDetailPageProps {
-  params: Promise<{ id: string }>; // this is now a Promise
+  params: Promise<{ id: string }>;
 }
 
-// Example: you'll replace this with a real API later
 async function checkUserOwnsAgent(agentId: string, userId: string): Promise<boolean> {
-
   if (!userId) return false;
 
   const res = await fetch(
@@ -29,16 +27,15 @@ async function checkUserOwnsAgent(agentId: string, userId: string): Promise<bool
 }
 
 export default function AgentDetailPage({ params }: AgentDetailPageProps) {
-  const { id } = React.use(params); // official way → unwrapping the Promise param
+  const { id } = React.use(params);
   const [agent, setAgent] = useState<Agent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ownsAgent, setOwnsAgent] = useState<boolean>(false);
   const [runsToBuy, setRunsToBuy] = useState<number>(1);
   const [isBuying, setIsBuying] = useState<boolean>(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const { user } = useAuth();
   const userId = user?.id;
-
-  console.log(agent)
 
   useEffect(() => {
     async function fetchAgent() {
@@ -47,9 +44,9 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
         setAgent(fetchedAgent);
 
         if (userId) {
-        const ownership = await checkUserOwnsAgent(id, userId);
-        setOwnsAgent(ownership);
-      }
+          const ownership = await checkUserOwnsAgent(id, userId);
+          setOwnsAgent(ownership);
+        }
       } catch (err) {
         console.error("Failed to load agent:", err);
         setError("Failed to load agent. Please try again later.");
@@ -59,18 +56,32 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
     fetchAgent();
   }, [id]);
 
-  const handleBuyRuns = async () => {
-    setIsBuying(true);
+  const generateApiKey = async () => {
     try {
-      // Call your API to buy runs here.
-      console.log(`Buying ${runsToBuy} runs for agent ${agent?.id}`);
-      alert(`Successfully bought ${runsToBuy} runs!`);
-      setOwnsAgent(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/aiworker/api-key/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          userId,
+          aiWorkerId: agent?.id,
+          runs: 10, // or allow user to choose this
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        alert("Failed to generate API key: " + data.message);
+        return;
+      }
+
+      setApiKey(data.data.apiKey);
     } catch (err) {
-      console.error("Error buying runs:", err);
-      alert("Failed to buy runs. Please try again.");
-    } finally {
-      setIsBuying(false);
+      console.error("Error generating API key:", err);
+      alert("Failed to generate API key");
     }
   };
 
@@ -86,29 +97,64 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
     <div className="max-w-3xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">{agent.name}</h1>
-        
         <p className="text-gray-600 mt-2">By {agent.developer?.name}</p>
         <p className="text-gray-600 mt-2">{agent.description}</p>
         <p className="text-sm text-gray-500 mt-1">
-          Price per run:{" "}
-          <span className="font-medium">₹{agent.pricePerRun}</span>
+          Price per run: <span className="font-medium">₹{agent.pricePerRun}</span>
         </p>
       </div>
 
       {ownsAgent ? (
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">Run Agent</h2>
-          <AgentForm agentId={agent.id} />
+          <AgentForm agentId={agent.id} inputSchema={{ properties: agent.inputSchema }} />
 
-          <div className="mt-6 border-t pt-4">
+          <div className="mt-6 border-t pt-4 space-y-4">
             <h3 className="text-lg font-semibold">Integrate via API</h3>
-            <p className="text-sm text-gray-600 mt-2">
-              Use this endpoint to run the agent in your own app:
+
+            <p className="text-sm text-gray-600">
+              You can run this agent in your own backend using the external API endpoint:
             </p>
-            <code className="block bg-gray-100 p-2 rounded text-sm mt-2">
-              POST {process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/aiworker/run/
-              {agent.id}
+
+            <code className="block bg-gray-100 p-2 rounded text-sm">
+              POST {process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/external-execute/{agent.id}
             </code>
+
+            {!apiKey ? (
+              <Button onClick={generateApiKey} className="mt-4">
+                Generate API Key
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-green-700 font-semibold">✅ API Key Generated:</p>
+                <code className="block bg-green-100 p-2 rounded text-sm">{apiKey}</code>
+
+                <p className="text-sm text-gray-700">Use this key in your backend like this:</p>
+                <pre className="bg-gray-800 text-white p-4 rounded text-sm overflow-x-auto">
+{`const axios = require("axios");
+
+const runAgent = async () => {
+  const res = await axios.post(
+    "${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/external-execute/${agent.id}",
+    {
+      input: {
+        // your input matching schema
+      },
+    },
+    {
+      headers: {
+        Authorization: "Bearer ${apiKey}"
+      }
+    }
+  );
+
+  console.log("Agent output:", res.data);
+};
+
+runAgent();`}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -133,21 +179,16 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
             Total price: ₹{agent.pricePerRun * runsToBuy}
           </p>
 
-         
-          {/* <Button className="w-full text-center" asChild>
-            <span
-              onClick={handleBuyRuns}
-              role="button"
-              tabIndex={0}
-              aria-disabled={isBuying}
-              
-            >
-              {isBuying ? "Processing..." : "Buy Runs & Run Agent"}
-            </span>
-          </Button> */}
           <div className="flex justify-center mt-4">
             {user && (
-              <AgentPaymentButton aiWorkerId={agent.id} pricePerRun={agent.pricePerRun} user={user} cycles={runsToBuy} isBuying={isBuying} onPaymentSuccess={() => setOwnsAgent(true)} />
+              <AgentPaymentButton
+                aiWorkerId={agent.id}
+                pricePerRun={agent.pricePerRun}
+                user={user}
+                cycles={runsToBuy}
+                isBuying={isBuying}
+                onPaymentSuccess={() => setOwnsAgent(true)}
+              />
             )}
           </div>
         </div>

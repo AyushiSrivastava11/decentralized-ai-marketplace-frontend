@@ -75,13 +75,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user); // <--- FIXED HERE
-        console.log("Running auth check...");
-        console.log("User from API:", data.user);
+        
         if (pathname === "/login") {
           router.replace("/dashboard");
         }
       } else {
-        console.log("Not authenticated, redirecting to login");
         setUser(null);
       }
     } catch (error) {
@@ -109,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData); // login API returns user object directly (no wrapper)
       toast.success("Login successful! Redirecting to dashboard...");
       await new Promise((resolve) => setTimeout(resolve, 300));
-      console.log("Login successful. Redirecting to dashboard...");
       router.replace("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
@@ -169,9 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include",
         body: JSON.stringify(updatedData),
       });
-      console.log(response);
-      console.log("Updating profile with data:", updatedData);
-
+      
       if (!response.ok) {
         throw new Error("Failed to update profile");
       }
@@ -195,12 +190,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         credentials: "include",
       });
-      console.log("Deleting account...");
       if (!response.ok) {
         throw new Error("Failed to delete account");
       }
       const result = await response.json();
-      console.log("Account deleted successfully:", result);
       setUser(null); // Clear user from context
       toast.success("Account deleted successfully. We're sad to see you go!");
       await new Promise((resolve) => setTimeout(resolve, 300));

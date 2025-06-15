@@ -12,7 +12,6 @@ export default function AgentsPage() {
       try {
         const fetchedAgents = await getAllAgents();
         setAgents(fetchedAgents);
-        console.log("THESE ARE THE AGENTS :", fetchedAgents);
       } catch (err) {
         console.error("Failed to load agents on dashboard:", err);
         setError("Failed to load agents. Please try again later.");
